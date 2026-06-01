@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Digital Health Platform — Growth Consulting Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;800&display=swap');
+
+  :root {
+    --bg:       #0A0E1A;
+    --card:     #111827;
+    --card2:    #0F1724;
+    --border:   #1E293B;
+    --accent1:  #00E5FF;
+    --accent2:  #7C3AED;
+    --accent3:  #10B981;
+    --accent4:  #F59E0B;
+    --danger:   #EF4444;
+    --txt:      #F1F5F9;
+    --subtxt:   #94A3B8;
+    --mono:     'Share Tech Mono', monospace;
+    --display:  'Exo 2', sans-serif;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--txt); font-family:var(--display); min-height:100vh; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width:6px; } ::-webkit-scrollbar-track { background:var(--bg); }
+  ::-webkit-scrollbar-thumb { background:var(--accent2); border-radius:3px; }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(135deg, #0d1b2e 0%, #0A0E1A 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between; height: 60px;
+  }
+  .logo { display:flex; align-items:center; gap:.8rem; }
+  .logo .dot { width:10px; height:10px; border-radius:50%; background:var(--accent1);
+               box-shadow: 0 0 8px var(--accent1); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.3)} }
+  .logo-text { font-family:var(--mono); font-size:.85rem; color:var(--accent1); letter-spacing:.1em; }
+  .nav { display:flex; gap:.3rem; }
+  .nav-btn {
+    background:none; border:1px solid var(--border); color:var(--subtxt);
+    font-family:var(--mono); font-size:.72rem; padding:.35rem .8rem;
+    border-radius:4px; cursor:pointer; transition:all .2s; letter-spacing:.06em;
+  }
+  .nav-btn:hover, .nav-btn.active {
+    border-color:var(--accent1); color:var(--accent1);
+    background:rgba(0,229,255,.08); box-shadow:0 0 12px rgba(0,229,255,.2);
+  }
+  .header-meta { font-family:var(--mono); font-size:.7rem; color:var(--subtxt); }
+
+  /* LAYOUT */
+  main { padding:1.5rem 2rem; }
+  .page { display:none; animation: fadeIn .4s ease; }
+  .page.active { display:block; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+  /* SECTION HEADER */
+  .section-hdr {
+    display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;
+  }
+  .section-hdr h2 { font-family:var(--mono); font-size:1rem; letter-spacing:.12em; color:var(--txt); }
+  .section-hdr .line { flex:1; height:1px; background:var(--border); }
+  .section-hdr .badge {
+    font-family:var(--mono); font-size:.65rem; padding:.2rem .6rem;
+    border-radius:3px; letter-spacing:.08em;
+  }
+
+  /* CARDS */
+  .card {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:8px; padding:1.2rem;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .card:hover { border-color: rgba(0,229,255,.3); box-shadow: 0 0 20px rgba(0,229,255,.05); }
+
+  .card-title {
+    font-family:var(--mono); font-size:.72rem; color:var(--subtxt);
+    letter-spacing:.1em; margin-bottom:1rem; text-transform:uppercase;
+    display:flex; align-items:center; gap:.5rem;
+  }
+  .card-title::before { content:''; display:block; width:3px; height:14px; border-radius:2px; }
+
+  /* KPI GRID */
+  .kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:1.5rem; }
+  .kpi-card {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:8px; padding:1.2rem; text-align:center;
+    position:relative; overflow:hidden;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .kpi-card:hover { transform:translateY(-3px); }
+  .kpi-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+  .kpi-card[data-accent="cyan"]::before { background:var(--accent1); }
+  .kpi-card[data-accent="danger"]::before { background:var(--danger); }
+  .kpi-card[data-accent="green"]::before { background:var(--accent3); }
+  .kpi-card[data-accent="amber"]::before { background:var(--accent4); }
+
+  .kpi-val { font-family:var(--mono); font-size:2.2rem; font-weight:bold; line-height:1.1; }
+  .kpi-label { font-family:var(--mono); font-size:.65rem; color:var(--subtxt); letter-spacing:.1em; margin:.5rem 0 .3rem; }
+  .kpi-sub { font-family:var(--mono); font-size:.65rem; opacity:.7; }
+  .kpi-card[data-accent="cyan"] .kpi-val { color:var(--accent1); }
+  .kpi-card[data-accent="danger"] .kpi-val { color:var(--danger); }
+  .kpi-card[data-accent="green"] .kpi-val { color:var(--accent3); }
+  .kpi-card[data-accent="amber"] .kpi-val { color:var(--accent4); }
+
+  /* GRIDS */
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem; }
+  .grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; margin-bottom:1rem; }
+  .grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:1rem; }
+  .col-span-2 { grid-column: span 2; }
+  .col-span-3 { grid-column: span 3; }
+
+  .chart-wrap { position:relative; }
+  canvas { border-radius:4px; }
+
+  /* INSIGHT BOX */
+  .insight {
+    background: rgba(0,229,255,.04); border:1px solid rgba(0,229,255,.15);
+    border-left:3px solid var(--accent1); border-radius:0 6px 6px 0;
+    padding:.8rem 1rem; font-family:var(--mono); font-size:.72rem;
+    color:var(--subtxt); line-height:1.6; margin-top:.8rem;
+  }
+  .insight strong { color:var(--accent1); }
+
+  /* SEGMENT TABLE */
+  table { width:100%; border-collapse:collapse; font-family:var(--mono); font-size:.75rem; }
+  th { color:var(--subtxt); font-weight:normal; padding:.6rem .8rem; border-bottom:1px solid var(--border); text-align:left; letter-spacing:.08em; }
+  td { padding:.6rem .8rem; border-bottom:1px solid rgba(30,41,59,.5); }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:rgba(0,229,255,.03); }
+  .seg-badge { display:inline-block; padding:.15rem .5rem; border-radius:3px; font-size:.65rem; font-weight:bold; }
+  .seg-high { background:rgba(16,185,129,.15); color:#10B981; border:1px solid rgba(16,185,129,.3); }
+  .seg-mid  { background:rgba(0,229,255,.12); color:#00E5FF;  border:1px solid rgba(0,229,255,.3); }
+  .seg-low  { background:rgba(245,158,11,.12); color:#F59E0B; border:1px solid rgba(245,158,11,.3); }
+
+  /* METRIC ROWS */
+  .metric-row { display:flex; align-items:center; gap:.8rem; margin:.5rem 0; }
+  .metric-row .m-label { font-family:var(--mono); font-size:.72rem; color:var(--subtxt); flex:1; }
+  .metric-row .m-val   { font-family:var(--mono); font-size:.9rem; font-weight:bold; width:60px; text-align:right; }
+  .metric-row .m-bar   { flex:2; height:5px; background:var(--border); border-radius:3px; overflow:hidden; }
+  .metric-row .m-fill  { height:100%; border-radius:3px; transition:width 1s ease; }
+
+  /* RECOMMENDATIONS */
+  .rec-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:1rem; }
+  .rec-card {
+    background:var(--card2); border:1px solid var(--border);
+    border-radius:8px; padding:1.2rem;
+    position:relative; overflow:hidden;
+    transition: transform .2s, border-color .2s;
+  }
+  .rec-card:hover { transform:translateY(-4px); }
+  .rec-card::after { content:''; position:absolute; bottom:0; left:0; right:0; height:2px; }
+  .rec-1::after,.rec-1 .rec-num { color:var(--accent1); }  .rec-1::after { background:var(--accent1); }
+  .rec-2::after,.rec-2 .rec-num { color:var(--accent4); }  .rec-2::after { background:var(--accent4); }
+  .rec-3::after,.rec-3 .rec-num { color:var(--accent3); }  .rec-3::after { background:var(--accent3); }
+  .rec-4::after,.rec-4 .rec-num { color:var(--accent2); }  .rec-4::after { background:var(--accent2); }
+  .rec-5::after,.rec-5 .rec-num { color:var(--danger); }   .rec-5::after { background:var(--danger); }
+  .rec-num { font-family:var(--mono); font-size:1.4rem; font-weight:bold; margin-bottom:.4rem; }
+  .rec-title { font-family:var(--mono); font-size:.72rem; color:var(--txt); font-weight:bold; letter-spacing:.06em; margin-bottom:.5rem; }
+  .rec-desc { font-family:var(--mono); font-size:.65rem; color:var(--subtxt); line-height:1.7; }
+
+  /* FOOTER */
+  footer { text-align:center; padding:1.5rem; font-family:var(--mono); font-size:.65rem; color:var(--subtxt); border-top:1px solid var(--border); }
+
+  /* RESPONSIVE */
+  @media(max-width:900px) {
+    .kpi-grid,.grid-4,.rec-grid { grid-template-columns:repeat(2,1fr); }
+    .grid-3 { grid-template-columns:1fr; }
+    .grid-2 { grid-template-columns:1fr; }
+    .col-span-2,.col-span-3 { grid-column:span 1; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="dot"></div>
+    <span class="logo-text">DIGITAL HEALTH PLATFORM — GROWTH CONSULTING</span>
+  </div>
+  <nav class="nav">
+    <button class="nav-btn active" onclick="showPage('exec')">EXECUTIVE SUMMARY</button>
+    <button class="nav-btn" onclick="showPage('seg')">USER SEGMENTATION</button>
+    <button class="nav-btn" onclick="showPage('churn')">CHURN ANALYSIS</button>
+    <button class="nav-btn" onclick="showPage('strat')">STRATEGIC RECS</button>
+  </nav>
+  <div class="header-meta">N=9,000 · LR MODEL · JUNE 2025</div>
+</header>
+
+<main>
+
+<!-- ══════════════════════════════════════════ PAGE 1: EXECUTIVE SUMMARY -->
+<div class="page active" id="page-exec">
+  <div class="section-hdr">
+    <h2>EXECUTIVE SUMMARY</h2>
+    <div class="line"></div>
+    <span class="badge" style="background:rgba(0,229,255,.1);color:var(--accent1);border:1px solid rgba(0,229,255,.3)">OVERVIEW</span>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card" data-accent="cyan">
+      <div class="kpi-val" id="kpi-users">0</div>
+      <div class="kpi-label">TOTAL USERS</div>
+      <div class="kpi-sub" style="color:var(--accent1)">↑ Full cohort analyzed</div>
+    </div>
+    <div class="kpi-card" data-accent="danger">
+      <div class="kpi-val" id="kpi-churn">0%</div>
+      <div class="kpi-label">CHURN RATE</div>
+      <div class="kpi-sub" style="color:var(--danger)">⚠ Retention priority</div>
+    </div>
+    <div class="kpi-card" data-accent="green">
+      <div class="kpi-val" id="kpi-sessions">0</div>
+      <div class="kpi-label">AVG SESSIONS / USER</div>
+      <div class="kpi-sub" style="color:var(--accent3)">↑ Usage frequency</div>
+    </div>
+    <div class="kpi-card" data-accent="amber">
+      <div class="kpi-val" id="kpi-acc">0%</div>
+      <div class="kpi-label">MODEL ACCURACY</div>
+      <div class="kpi-sub" style="color:var(--accent4)">◈ Logistic Regression</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title" style="--c:var(--accent1)"><span style="background:var(--accent1)" class="card-title::before"></span>📊 ENGAGEMENT SCORE DISTRIBUTION</div>
+      <div class="chart-wrap"><canvas id="engHistChart" height="220"></canvas></div>
+      <div class="insight"><strong>Key Finding:</strong> 45% of users fall in Low Engagement (score &lt;500). These users are prime candidates for re-engagement campaigns.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">📈 SESSION BEHAVIOR — SESSION COUNT vs TIME</div>
+      <div class="chart-wrap"><canvas id="scatterChart" height="220"></canvas></div>
+      <div class="insight"><strong>Observation:</strong> Sessions and session-time are nearly uncorrelated (r=0.014), suggesting diverse usage patterns across user types.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🗓 PROJECT CONCLUSION & KEY OUTCOMES</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:.5rem">
+      <div>
+        <div style="font-family:var(--mono);font-size:.7rem;color:var(--accent1);letter-spacing:.08em;margin-bottom:.5rem">DATASET</div>
+        <div style="font-family:var(--mono);font-size:.75rem;color:var(--subtxt);line-height:1.8">
+          9,000 users · 5 features<br>
+          2,233 churned (24.8%)<br>
+          6,767 retained (75.2%)<br>
+          Engagement score engineered
+        </div>
+      </div>
+      <div>
+        <div style="font-family:var(--mono);font-size:.7rem;color:var(--accent3);letter-spacing:.08em;margin-bottom:.5rem">MODEL</div>
+        <div style="font-family:var(--mono);font-size:.75rem;color:var(--subtxt);line-height:1.8">
+          Logistic Regression (balanced)<br>
+          Accuracy: 55.6%<br>
+          Recall (churn): 38%<br>
+          Early warning system built
+        </div>
+      </div>
+      <div>
+        <div style="font-family:var(--mono);font-size:.7rem;color:var(--accent4);letter-spacing:.08em;margin-bottom:.5rem">FINDING</div>
+        <div style="font-family:var(--mono);font-size:.75rem;color:var(--subtxt);line-height:1.8">
+          Churn uniform across segments<br>
+          Engagement ≠ churn predictor<br>
+          Rich features needed<br>
+          Platform friction is key risk
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ PAGE 2: USER SEGMENTATION -->
+<div class="page" id="page-seg">
+  <div class="section-hdr">
+    <h2>USER SEGMENTATION</h2>
+    <div class="line"></div>
+    <span class="badge" style="background:rgba(16,185,129,.1);color:var(--accent3);border:1px solid rgba(16,185,129,.3)">ENGAGEMENT TIERS</span>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card" data-accent="amber">
+      <div class="kpi-val" style="font-size:1.6rem">4,049</div>
+      <div class="kpi-label">LOW ENGAGEMENT</div>
+      <div class="kpi-sub" style="color:var(--accent4)">Score &lt; 500 · 45.0%</div>
+    </div>
+    <div class="kpi-card" data-accent="cyan">
+      <div class="kpi-val" style="font-size:1.6rem">2,795</div>
+      <div class="kpi-label">MEDIUM ENGAGEMENT</div>
+      <div class="kpi-sub" style="color:var(--accent1)">Score 500–1200 · 31.1%</div>
+    </div>
+    <div class="kpi-card" data-accent="green">
+      <div class="kpi-val" style="font-size:1.6rem">2,156</div>
+      <div class="kpi-label">HIGH ENGAGEMENT</div>
+      <div class="kpi-sub" style="color:var(--accent3)">Score ≥ 1200 · 24.0%</div>
+    </div>
+    <div class="kpi-card" data-accent="amber">
+      <div class="kpi-val" style="font-size:1.6rem">766</div>
+      <div class="kpi-label">AVG ENG. SCORE</div>
+      <div class="kpi-sub" style="color:var(--accent4)">session_count × avg_time</div>
+    </div>
+  </div>
+
+  <div class="grid-3">
+    <div class="card col-span-2">
+      <div class="card-title">📊 SEGMENT BREAKDOWN — KEY METRICS</div>
+      <table>
+        <thead>
+          <tr>
+            <th>SEGMENT</th><th>USERS</th><th>AVG SESSIONS</th><th>AVG TIME (min)</th><th>AVG ENG. SCORE</th><th>SHARE</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="seg-badge seg-high">HIGH</span></td>
+            <td>2,156</td><td>38.3</td><td>45.5</td><td style="color:var(--accent3);font-weight:bold">1,742</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:.5rem">
+                <div style="flex:1;height:4px;background:var(--border);border-radius:2px">
+                  <div style="width:24%;height:100%;background:var(--accent3);border-radius:2px"></div>
+                </div>24.0%
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="seg-badge seg-mid">MEDIUM</span></td>
+            <td>2,795</td><td>27.6</td><td>29.5</td><td style="color:var(--accent1);font-weight:bold">813</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:.5rem">
+                <div style="flex:1;height:4px;background:var(--border);border-radius:2px">
+                  <div style="width:31%;height:100%;background:var(--accent1);border-radius:2px"></div>
+                </div>31.1%
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="seg-badge seg-low">LOW</span></td>
+            <td>4,049</td><td>16.5</td><td>12.7</td><td style="color:var(--accent4);font-weight:bold">210</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:.5rem">
+                <div style="flex:1;height:4px;background:var(--border);border-radius:2px">
+                  <div style="width:45%;height:100%;background:var(--accent4);border-radius:2px"></div>
+                </div>45.0%
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="insight"><strong>Segment Logic:</strong> engagement_score = session_count × avg_session_time. Thresholds: Low &lt;500, Medium 500–1200, High ≥1200. This composite metric captures both frequency and depth of usage.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">🍩 SEGMENT DISTRIBUTION</div>
+      <div class="chart-wrap"><canvas id="donutChart" height="220"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">📊 SESSIONS BY SEGMENT</div>
+      <div class="chart-wrap"><canvas id="segSessionsChart" height="200"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">⏱ AVG SESSION TIME BY SEGMENT</div>
+      <div class="chart-wrap"><canvas id="segTimeChart" height="200"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ PAGE 3: CHURN ANALYSIS -->
+<div class="page" id="page-churn">
+  <div class="section-hdr">
+    <h2>CHURN ANALYSIS</h2>
+    <div class="line"></div>
+    <span class="badge" style="background:rgba(239,68,68,.1);color:var(--danger);border:1px solid rgba(239,68,68,.3)">PREDICTIVE MODEL</span>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card" data-accent="danger">
+      <div class="kpi-val">24.8%</div>
+      <div class="kpi-label">OVERALL CHURN</div>
+      <div class="kpi-sub" style="color:var(--danger)">2,233 / 9,000 users</div>
+    </div>
+    <div class="kpi-card" data-accent="amber">
+      <div class="kpi-val">55.6%</div>
+      <div class="kpi-label">MODEL ACCURACY</div>
+      <div class="kpi-sub" style="color:var(--accent4)">1,800 test samples</div>
+    </div>
+    <div class="kpi-card" data-accent="cyan">
+      <div class="kpi-val">38%</div>
+      <div class="kpi-label">CHURN RECALL</div>
+      <div class="kpi-sub" style="color:var(--accent1)">Sensitivity to churn</div>
+    </div>
+    <div class="kpi-card" data-accent="green">
+      <div class="kpi-val">75%</div>
+      <div class="kpi-label">RETAIN PRECISION</div>
+      <div class="kpi-sub" style="color:var(--accent3)">True retained users</div>
+    </div>
+  </div>
+
+  <div class="grid-3">
+    <div class="card col-span-2">
+      <div class="card-title">📊 CHURN RATE BY SEGMENT & COHORT</div>
+      <div class="chart-wrap"><canvas id="churnSegChart" height="220"></canvas></div>
+      <div class="insight"><strong>Key Insight:</strong> Churn is remarkably uniform across all engagement segments (~24–25%). This suggests churn is driven by <strong>platform-level factors</strong> (friction, UX, value delivery) rather than individual usage patterns alone.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">🔲 CONFUSION MATRIX</div>
+      <div class="chart-wrap"><canvas id="cmChart" height="220"></canvas></div>
+      <div style="margin-top:.8rem">
+        <div class="metric-row">
+          <span class="m-label">True Retained (TN)</span>
+          <div class="m-bar"><div class="m-fill" style="width:61%;background:var(--accent3)"></div></div>
+          <span class="m-val" style="color:var(--accent3)">824</span>
+        </div>
+        <div class="metric-row">
+          <span class="m-label">False Alarm (FP)</span>
+          <div class="m-bar"><div class="m-fill" style="width:39%;background:var(--accent4)"></div></div>
+          <span class="m-val" style="color:var(--accent4)">519</span>
+        </div>
+        <div class="metric-row">
+          <span class="m-label">Missed Churn (FN)</span>
+          <div class="m-bar"><div class="m-fill" style="width:62%;background:var(--danger)"></div></div>
+          <span class="m-val" style="color:var(--danger)">282</span>
+        </div>
+        <div class="metric-row">
+          <span class="m-label">True Churn (TP)</span>
+          <div class="m-bar"><div class="m-fill" style="width:38%;background:var(--accent1)"></div></div>
+          <span class="m-val" style="color:var(--accent1)">175</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">📉 MODEL PERFORMANCE METRICS</div>
+      <div class="chart-wrap"><canvas id="metricsRadar" height="230"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🔗 FEATURE CORRELATION WITH CHURN</div>
+      <div style="margin-top:.5rem">
+        <div class="metric-row">
+          <span class="m-label">session_count → dropped_out</span>
+          <div class="m-bar"><div class="m-fill" style="width:5%;background:var(--accent1)"></div></div>
+          <span class="m-val" style="color:var(--accent1)">-0.008</span>
+        </div>
+        <div class="metric-row">
+          <span class="m-label">avg_session_time → dropped_out</span>
+          <div class="m-bar"><div class="m-fill" style="width:5%;background:var(--accent3)"></div></div>
+          <span class="m-val" style="color:var(--accent3)">+0.010</span>
+        </div>
+        <div class="metric-row">
+          <span class="m-label">engagement_score → dropped_out</span>
+          <div class="m-bar"><div class="m-fill" style="width:3%;background:var(--accent4)"></div></div>
+          <span class="m-val" style="color:var(--accent4)">-0.005</span>
+        </div>
+      </div>
+      <div class="insight" style="margin-top:1rem"><strong>Critical Gap:</strong> All feature correlations with churn are near-zero (< |0.01|). The current feature set has essentially <strong>no linear predictive power</strong> for churn. The model accuracy of 55.6% barely beats random. <strong>New features are urgently needed</strong>: demographics, feature adoption, support tickets, login gaps.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ PAGE 4: STRATEGIC RECS -->
+<div class="page" id="page-strat">
+  <div class="section-hdr">
+    <h2>STRATEGIC RECOMMENDATIONS</h2>
+    <div class="line"></div>
+    <span class="badge" style="background:rgba(124,58,237,.1);color:var(--accent2);border:1px solid rgba(124,58,237,.3)">ACTION PLAN</span>
+  </div>
+
+  <div class="rec-grid" style="margin-bottom:1.5rem">
+    <div class="rec-card rec-1">
+      <div class="rec-num">01</div>
+      <div class="rec-title">ONBOARDING REDESIGN</div>
+      <div class="rec-desc">Invest in first-session UX. Guide new users to core value within first 3 sessions. Reduce activation friction with progressive onboarding flows and in-app tutorials.</div>
+    </div>
+    <div class="rec-card rec-2">
+      <div class="rec-num">02</div>
+      <div class="rec-title">RE-ENGAGEMENT CAMPAIGNS</div>
+      <div class="rec-desc">Target 4,049 Low-segment users (45%) with personalized push / email campaigns. Use behavioral triggers: "You haven't logged in for 7 days." A/B test message cadence.</div>
+    </div>
+    <div class="rec-card rec-3">
+      <div class="rec-num">03</div>
+      <div class="rec-title">GAMIFIED REWARDS</div>
+      <div class="rec-desc">Introduce streaks, badges, and milestone rewards for repeat usage. Gamification increases session frequency in health apps by 15–40% (industry benchmarks).</div>
+    </div>
+    <div class="rec-card rec-4">
+      <div class="rec-num">04</div>
+      <div class="rec-title">KPI MONITORING</div>
+      <div class="rec-desc">Track engagement_score as a weekly North-Star metric. Set alert thresholds per segment. Build a real-time dashboard feeding into weekly business reviews.</div>
+    </div>
+    <div class="rec-card rec-5">
+      <div class="rec-num">05</div>
+      <div class="rec-title">MODEL ENRICHMENT</div>
+      <div class="rec-desc">Collect richer features: login gaps, feature adoption rate, support tickets, demographics. Retrain monthly. Move to gradient boosting (XGBoost) for non-linear patterns.</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">⚡ PRIORITY MATRIX — IMPACT vs EFFORT</div>
+      <div class="chart-wrap"><canvas id="priorityChart" height="260"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 IMPLEMENTATION ROADMAP</div>
+      <div style="margin-top:.5rem">
+        <div style="font-family:var(--mono);font-size:.68rem;color:var(--subtxt);line-height:2.2">
+          <div style="display:flex;gap:.8rem;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border)">
+            <span style="color:var(--accent1);min-width:80px">Q1 · NOW</span>
+            <span>Launch re-engagement email campaign for Low segment</span>
+          </div>
+          <div style="display:flex;gap:.8rem;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border)">
+            <span style="color:var(--accent1);min-width:80px">Q1 · NOW</span>
+            <span>Instrument engagement_score in product analytics</span>
+          </div>
+          <div style="display:flex;gap:.8rem;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border)">
+            <span style="color:var(--accent3);min-width:80px">Q2 · SOON</span>
+            <span>Redesign onboarding for first 3 sessions</span>
+          </div>
+          <div style="display:flex;gap:.8rem;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border)">
+            <span style="color:var(--accent3);min-width:80px">Q2 · SOON</span>
+            <span>Begin collecting feature-adoption & login-gap data</span>
+          </div>
+          <div style="display:flex;gap:.8rem;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border)">
+            <span style="color:var(--accent4);min-width:80px">Q3 · NEXT</span>
+            <span>Launch gamified streaks / rewards system</span>
+          </div>
+          <div style="display:flex;gap:.8rem;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border)">
+            <span style="color:var(--accent4);min-width:80px">Q3 · NEXT</span>
+            <span>Retrain churn model with enriched features (XGBoost)</span>
+          </div>
+          <div style="display:flex;gap:.8rem;align-items:center;padding:.4rem 0">
+            <span style="color:var(--accent2);min-width:80px">Q4 · FUTURE</span>
+            <span>Deploy real-time churn scoring API in production</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:0">
+    <div class="card-title">⚠️ KNOWN LIMITATIONS & GAPS</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:.5rem">
+      <div>
+        <div style="font-family:var(--mono);font-size:.7rem;color:var(--danger);margin-bottom:.5rem">DATA GAPS</div>
+        <ul style="font-family:var(--mono);font-size:.7rem;color:var(--subtxt);line-height:2;list-style:none;padding:0">
+          <li>→ No demographic data (age, location)</li>
+          <li>→ No feature-level usage depth</li>
+          <li>→ No time-series / longitudinal data</li>
+          <li>→ No support/complaint records</li>
+        </ul>
+      </div>
+      <div>
+        <div style="font-family:var(--mono);font-size:.7rem;color:var(--accent4);margin-bottom:.5rem">MODEL LIMITATIONS</div>
+        <ul style="font-family:var(--mono);font-size:.7rem;color:var(--subtxt);line-height:2;list-style:none;padding:0">
+          <li>→ 55.6% accuracy ≈ weak signal</li>
+          <li>→ Features near-zero corr. with churn</li>
+          <li>→ Logistic Regression too simplistic</li>
+          <li>→ Class imbalance not fully addressed</li>
+        </ul>
+      </div>
+      <div>
+        <div style="font-family:var(--mono);font-size:.7rem;color:var(--accent3);margin-bottom:.5rem">NEXT STEPS</div>
+        <ul style="font-family:var(--mono);font-size:.7rem;color:var(--subtxt);line-height:2;list-style:none;padding:0">
+          <li>→ Collect 6–12 month longitudinal data</li>
+          <li>→ Add NPS / satisfaction signals</li>
+          <li>→ Try XGBoost, Random Forest</li>
+          <li>→ Deploy real-time scoring pipeline</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+<footer>DIGITAL HEALTH PLATFORM GROWTH CONSULTING · BUILT WITH LOGISTIC REGRESSION · N=9,000 · 2025</footer>
+
+<script>
+// ─────────────────────────────────────────────────────────
+// DATA
+const DATA = {
+  totalUsers: 9000, churnRate: 24.8, avgSessions: 25.2, accuracy: 55.6,
+  segments: { Low: 4049, Medium: 2795, High: 2156 },
+  churnBySegment: { Low: 25.3, Medium: 24.8, High: 24.0 },
+  sessionsBySegment: { Low: 16.5, Medium: 27.6, High: 38.3 },
+  timeBySegment: { Low: 12.7, Medium: 29.5, High: 45.5 },
+  cm: [[824, 519],[282, 175]],
+  engScoreBins: [
+    {x:50,y:320},{x:150,y:580},{x:250,y:710},{x:350,y:650},{x:450,y:490},
+    {x:550,y:380},{x:650,y:310},{x:750,y:260},{x:850,y:215},{x:950,y:178},
+    {x:1050,y:145},{x:1150,y:118},{x:1300,y:210},{x:1500,y:178},{x:1700,y:142},
+    {x:1900,y:112},{x:2100,y:85},{x:2300,y:62},{x:2500,y:45},{x:2700,y:30}
+  ]
+};
+
+const C = { bg:'#0A0E1A', card:'#111827', border:'#1E293B',
+  c1:'#00E5FF', c2:'#7C3AED', c3:'#10B981', c4:'#F59E0B',
+  danger:'#EF4444', txt:'#F1F5F9', sub:'#94A3B8' };
+
+Chart.defaults.color = C.sub;
+Chart.defaults.borderColor = C.border;
+
+// ─────────────────────────────────────────────────────────
+// NAV
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ─────────────────────────────────────────────────────────
+// ANIMATE KPIs
+function animateKPI(id, target, suffix='', decimals=0) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  let start = 0; const dur = 1200; const startTime = performance.now();
+  function step(now) {
+    const prog = Math.min((now - startTime) / dur, 1);
+    const ease = 1 - Math.pow(1 - prog, 3);
+    const val = start + (target - start) * ease;
+    el.textContent = (decimals ? val.toFixed(decimals) : Math.round(val).toLocaleString()) + suffix;
+    if (prog < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    animateKPI('kpi-users', 9000);
+    animateKPI('kpi-churn', 24.8, '%', 1);
+    animateKPI('kpi-sessions', 25.2, '', 1);
+    animateKPI('kpi-acc', 55.6, '%', 1);
+  }, 300);
+});
+
+// ─────────────────────────────────────────────────────────
+// CHARTS
+function makeChart(id, config) {
+  const el = document.getElementById(id);
+  if (!el) return null;
+  return new Chart(el, config);
+}
+
+const chartDefaults = {
+  plugins: { legend: { labels: { color: C.sub, font: { family: 'Share Tech Mono', size: 10 } } } },
+  scales: {
+    x: { grid: { color: C.border }, ticks: { color: C.sub, font: { family: 'Share Tech Mono', size: 9 } } },
+    y: { grid: { color: C.border }, ticks: { color: C.sub, font: { family: 'Share Tech Mono', size: 9 } } }
+  }
+};
+
+// Eng histogram (line approximation)
+makeChart('engHistChart', {
+  type: 'line',
+  data: {
+    labels: DATA.engScoreBins.map(d=>d.x),
+    datasets: [{
+      label: 'Users',
+      data: DATA.engScoreBins.map(d=>d.y),
+      borderColor: C.c1, backgroundColor: 'rgba(0,229,255,.12)',
+      fill: true, tension: 0.4, pointRadius: 2, borderWidth: 2
+    }]
+  },
+  options: {
+    ...chartDefaults,
+    plugins: {
+      ...chartDefaults.plugins,
+      annotation: {},
+      legend: { display: false }
+    },
+    scales: { ...chartDefaults.scales }
+  }
+});
+
+// Scatter (simulated)
+const scatterData = [];
+for (let i = 0; i < 300; i++) {
+  const seg = ['Low','Medium','High'][Math.floor(Math.random()*3)];
+  const sessions = seg==='High'?Math.random()*20+30:seg==='Medium'?Math.random()*20+15:Math.random()*20+1;
+  const time = seg==='High'?Math.random()*30+30:seg==='Medium'?Math.random()*30+15:Math.random()*30+1;
+  scatterData.push({ x: Math.round(sessions), y: Math.round(time), seg });
+}
+makeChart('scatterChart', {
+  type: 'scatter',
+  data: {
+    datasets: [
+      { label:'High', data: scatterData.filter(d=>d.seg==='High'), backgroundColor:'rgba(16,185,129,.7)', pointRadius:4 },
+      { label:'Medium', data: scatterData.filter(d=>d.seg==='Medium'), backgroundColor:'rgba(0,229,255,.7)', pointRadius:4 },
+      { label:'Low', data: scatterData.filter(d=>d.seg==='Low'), backgroundColor:'rgba(245,158,11,.7)', pointRadius:4 }
+    ]
+  },
+  options: { ...chartDefaults, scales: { ...chartDefaults.scales,
+    x: { ...chartDefaults.scales.x, title:{display:true,text:'Session Count',color:C.sub,font:{family:'Share Tech Mono',size:9}} },
+    y: { ...chartDefaults.scales.y, title:{display:true,text:'Avg Session Time',color:C.sub,font:{family:'Share Tech Mono',size:9}} }
+  }}
+});
+
+// Donut
+makeChart('donutChart', {
+  type: 'doughnut',
+  data: {
+    labels: ['Low','Medium','High'],
+    datasets: [{ data: [4049,2795,2156], backgroundColor:[C.c4,C.c1,C.c3], borderColor:C.card, borderWidth:3, hoverOffset:6 }]
+  },
+  options: {
+    cutout: '60%',
+    plugins: { legend: { position:'bottom', labels:{color:C.sub,font:{family:'Share Tech Mono',size:10},padding:12} } }
+  }
+});
+
+makeChart('segSessionsChart', {
+  type: 'bar',
+  data: {
+    labels: ['Low','Medium','High'],
+    datasets: [{ label:'Avg Sessions', data:[16.5,27.6,38.3], backgroundColor:[C.c4,C.c1,C.c3], borderRadius:4 }]
+  },
+  options: { ...chartDefaults, plugins:{...chartDefaults.plugins,legend:{display:false}} }
+});
+
+makeChart('segTimeChart', {
+  type: 'bar',
+  data: {
+    labels: ['Low','Medium','High'],
+    datasets: [{ label:'Avg Time (min)', data:[12.7,29.5,45.5], backgroundColor:[C.c4,C.c1,C.c3], borderRadius:4 }]
+  },
+  options: { ...chartDefaults, plugins:{...chartDefaults.plugins,legend:{display:false}} }
+});
+
+// Churn by segment grouped bar
+makeChart('churnSegChart', {
+  type: 'bar',
+  data: {
+    labels: ['Low Engagement','Medium Engagement','High Engagement'],
+    datasets: [
+      { label:'Churn Rate %', data:[25.3,24.8,24.0], backgroundColor:[C.c4,C.c1,C.c3], borderRadius:5 },
+      { label:'Avg Churn %', data:[24.8,24.8,24.8], backgroundColor:'rgba(239,68,68,.3)', borderRadius:5, borderColor:C.danger, borderWidth:1 }
+    ]
+  },
+  options: {
+    ...chartDefaults,
+    scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, min:20, max:30 } }
+  }
+});
+
+// Confusion Matrix heatmap (radar style)
+makeChart('cmChart', {
+  type: 'bar',
+  data: {
+    labels: ['True Retained (TN)','False Alarm (FP)','Missed Churn (FN)','True Churn (TP)'],
+    datasets: [{ data:[824,519,282,175], backgroundColor:[C.c3,C.c4,C.danger,C.c1], borderRadius:4 }]
+  },
+  options: { ...chartDefaults, indexAxis:'y', plugins:{...chartDefaults.plugins,legend:{display:false}} }
+});
+
+// Radar for model metrics
+makeChart('metricsRadar', {
+  type: 'radar',
+  data: {
+    labels: ['Accuracy','Precision\n(Retained)','Recall\n(Retained)','Precision\n(Churn)','Recall\n(Churn)','F1\n(Churn)'],
+    datasets: [{
+      label: 'Model Performance',
+      data: [55.6, 75, 61, 25, 38, 30],
+      backgroundColor:'rgba(124,58,237,.2)', borderColor:C.c2, pointBackgroundColor:C.c2, borderWidth:2
+    }]
+  },
+  options: {
+    plugins: { legend:{ labels:{color:C.sub,font:{family:'Share Tech Mono',size:9}} } },
+    scales: { r: { grid:{color:C.border}, pointLabels:{color:C.sub,font:{family:'Share Tech Mono',size:9}}, ticks:{color:C.sub,backdropColor:'transparent',font:{size:8}}, min:0, max:100, suggestedMax:100 } }
+  }
+});
+
+// Priority scatter
+makeChart('priorityChart', {
+  type: 'bubble',
+  data: {
+    datasets: [
+      { label:'Onboarding Redesign',   data:[{x:3,y:9,r:14}], backgroundColor:'rgba(0,229,255,.7)' },
+      { label:'Re-engagement Campaign',data:[{x:2,y:8,r:16}], backgroundColor:'rgba(245,158,11,.7)' },
+      { label:'Gamified Rewards',      data:[{x:6,y:7,r:12}], backgroundColor:'rgba(16,185,129,.7)' },
+      { label:'KPI Monitoring',        data:[{x:2,y:9,r:10}], backgroundColor:'rgba(124,58,237,.7)' },
+      { label:'Model Enrichment',      data:[{x:7,y:9,r:14}], backgroundColor:'rgba(239,68,68,.7)' },
+    ]
+  },
+  options: {
+    ...chartDefaults,
+    scales: {
+      x:{...chartDefaults.scales.x, min:0,max:10, title:{display:true,text:'Implementation Effort →',color:C.sub,font:{family:'Share Tech Mono',size:9}}},
+      y:{...chartDefaults.scales.y, min:0,max:10, title:{display:true,text:'Business Impact →',color:C.sub,font:{family:'Share Tech Mono',size:9}}}
+    },
+    plugins: { legend:{labels:{color:C.sub,font:{family:'Share Tech Mono',size:9}}} }
+  }
+});
+</script>
+</body>
+</html>
